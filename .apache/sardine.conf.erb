@@ -1,0 +1,50 @@
+<VirtualHost *:<%= ENV["PORT"] %>>
+    ServerName <%= ENV["HOSTNAME"] %>
+
+    <IfModule mod_deflate.c>
+        SetOutputFilter DEFLATE
+    </IfModule>
+
+    <Location /dav>
+        Deny from all
+        RewriteEngine off
+    </Location>
+
+    <Location /dav/anon>
+        Allow from all
+        RewriteEngine off
+        DAV on
+        Options +Indexes
+    </Location>
+
+    <Location /dav/basic>
+        Allow from all
+        RewriteEngine Off
+        DAV on
+        # Limit just the DAV methods
+        <Limit GET PUT POST DELETE PROPFIND PROPPATCH MKCOL COPY MOVE LOCK UNLOCK>
+            AuthType Basic
+            AuthName "DAV Access Basic"
+            AuthUserFile basic.passwd
+            Require valid-user
+        </Limit>
+    </Location>
+
+    <Location /dav/digest>
+        Allow from all
+        RewriteEngine Off
+        DAV on
+        # Limit just the DAV methods
+        <Limit GET PUT POST DELETE PROPFIND PROPPATCH MKCOL COPY MOVE LOCK UNLOCK>
+            AuthType Digest
+            AuthName "DAV Access Digest"
+            AuthUserFile digest.passwd
+            Require valid-user
+        </Limit>
+    </Location>
+
+    RedirectMatch 301 ^/redir-perm/$ http://<%= ENV["HOSTNAME"] %>/dav/basic
+    RedirectMatch 302 ^/redir-tmp/(.*)$ http://<%= ENV["HOSTNAME"] %>/dav/basic/$1
+    RedirectMatch 303 ^/redir-other/$ http://<%= ENV["HOSTNAME"] %>/dav/basic
+    RedirectMatch 410 ^/redir-gone/$
+</VirtualHost>
